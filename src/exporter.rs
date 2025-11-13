@@ -57,8 +57,7 @@ impl Exporter {
                     .unwrap_or(false);
 
                 let status = match (in_use, in_alerts) {
-                    (true, true) => "in use",
-                    (true, false) => "in use",
+                    (true, _) => "in use",
                     (false, true) => "not in use (may be used by alerts)",
                     (false, false) => "not in use",
                 };
