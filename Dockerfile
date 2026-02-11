@@ -16,11 +16,9 @@ ARG BINARY_PATH=target/x86_64-unknown-linux-musl/release/mimir-cardinality-analy
 # Create a non-root user
 RUN addgroup -S appadmin -g 1000 && adduser -S appadmin -G appadmin -D -u 1000
 
-# Create writable directory
+# Create writable directory and app directory
 RUN mkdir -p /data && chown appadmin:appadmin /data
-
-# Create config directory
-RUN mkdir -p /etc/config
+RUN mkdir -p /app && chown appadmin:appadmin /app
 
 WORKDIR /data
 
@@ -46,4 +44,4 @@ RUN chown appadmin:appadmin /usr/local/bin/mimirtool
 
 # Run as non-root
 USER appadmin
-CMD ["/usr/local/bin/mimir-cardinality-analyzer", "--config", "/etc/config/config.yaml"]
+CMD ["/usr/local/bin/mimir-cardinality-analyzer", "--config", "/app/config.yaml"]
