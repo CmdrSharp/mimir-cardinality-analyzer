@@ -18,6 +18,10 @@ pub struct Args {
     /// Config file
     #[arg(short, long)]
     pub config: PathBuf,
+
+    /// Output directory for intermediate files (grafana.json, prometheus-metrics.json)
+    #[arg(short, long, default_value = ".")]
+    pub output_dir: PathBuf,
 }
 
 /// Handle signals

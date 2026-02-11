@@ -2,11 +2,21 @@ use anyhow::Result;
 use serde::Deserialize;
 use std::path::PathBuf;
 
+impl Config {
+    /// Set the output directory for intermediate files
+    pub fn with_output_dir(mut self, output_dir: PathBuf) -> Self {
+        self.output_dir = output_dir;
+        self
+    }
+}
+
 #[derive(Debug, Deserialize, Clone)]
 pub struct Config {
     pub grafana: Grafana,
     pub mimir: Mimir,
     pub http: Http,
+    #[serde(skip)]
+    pub output_dir: PathBuf,
 }
 
 #[derive(Debug, Clone)]

@@ -17,7 +17,7 @@ async fn main() -> anyhow::Result<()> {
 
     // Parse config
     let args = Args::parse();
-    let config = config::Config::from_file(&args.config)?;
+    let config = config::Config::from_file(&args.config)?.with_output_dir(args.output_dir);
 
     // Handle signals
     signal_handler();

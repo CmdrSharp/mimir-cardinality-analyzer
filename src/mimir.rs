@@ -56,6 +56,9 @@ impl Mimir {
         tracing::info!("Analyzing metric usage in dashboards");
         let _timer = Timer::new().with_label("task", "analyze_grafana");
 
+        let grafana_output = self.config.output_dir.join("grafana.json");
+        let grafana_output = grafana_output.to_string_lossy();
+
         let args = vec![
             "analyze",
             "grafana",
@@ -64,7 +67,7 @@ impl Mimir {
             "--key",
             &self.config.grafana.token,
             "--output",
-            "grafana.json",
+            &grafana_output,
         ];
 
         match Command::new("mimirtool").args(args).output().await {
@@ -93,6 +96,12 @@ impl Mimir {
             .with_label("task", "analyze_tenant")
             .with_label("tenant_id", tenant_id);
 
+        let grafana_input = self.config.output_dir.join("grafana.json");
+        let grafana_input = grafana_input.to_string_lossy();
+
+        let prometheus_output = self.config.output_dir.join("prometheus-metrics.json");
+        let prometheus_output = prometheus_output.to_string_lossy();
+
         let args = vec![
             "analyze",
             "prometheus",
@@ -103,7 +112,9 @@ impl Mimir {
             "--prometheus-http-prefix",
             "prometheus",
             "--grafana-metrics-file",
-            "grafana.json",
+            &grafana_input,
+            "--output",
+            &prometheus_output,
         ];
 
         match Command::new("mimirtool").args(args).output().await {
@@ -122,7 +133,8 @@ impl Mimir {
             }
         };
 
-        let content = std::fs::read_to_string("prometheus-metrics.json")?;
+        let content =
+            std::fs::read_to_string(self.config.output_dir.join("prometheus-metrics.json"))?;
         let data: serde_json::Value = serde_json::from_str(&content)?;
 
         let metrics = data["in_use_metric_counts"]

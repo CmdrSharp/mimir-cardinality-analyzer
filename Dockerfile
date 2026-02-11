@@ -44,4 +44,4 @@ RUN chown appadmin:appadmin /usr/local/bin/mimirtool
 
 # Run as non-root
 USER appadmin
-CMD ["/usr/local/bin/mimir-cardinality-analyzer", "--config", "/app/config.yaml"]
+CMD ["/usr/local/bin/mimir-cardinality-analyzer", "--config", "/app/config.yaml", "--output-dir", "/data"]
