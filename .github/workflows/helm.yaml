@@ -1,0 +1,45 @@
+name: Publish Helm Chart
+
+on:
+  workflow_dispatch:
+
+jobs:
+  helm:
+    name: Build and push Helm chart
+    runs-on: ubuntu-24.04
+    env:
+      REGISTRY: "quay.io"
+      HELM_REPO: "duk4s/helm"
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: 'latest'
+
+      - name: Log into Quay
+        run: |
+          echo "${{ secrets.QUAY_PASSWORD }}" | helm registry login ${{ env.REGISTRY }} \
+            --username ${{ secrets.QUAY_USER }} \
+            --password-stdin
+
+      - name: Get chart version
+        id: version
+        run: |
+          CHART_VERSION=$(yq '.version' helm/mimir-cardinality-analyzer/Chart.yaml)
+          echo "CHART_VERSION=${CHART_VERSION}" >> $GITHUB_OUTPUT
+          echo "📦 Chart version: ${CHART_VERSION}"
+
+      - name: Package Helm chart
+        run: |
+          helm package helm/mimir-cardinality-analyzer
+
+      - name: Push Helm chart to Quay OCI
+        run: |
+          helm push mimir-cardinality-analyzer-${{ steps.version.outputs.CHART_VERSION }}.tgz \
+            oci://${{ env.REGISTRY }}/${{ env.HELM_REPO }}
+
+      - name: Logout from Quay
+        if: always()
+        run: helm registry logout ${{ env.REGISTRY }}

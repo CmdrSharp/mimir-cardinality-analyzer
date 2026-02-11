@@ -1,0 +1,60 @@
+name: Build Docker Image
+
+on:
+  workflow_dispatch:
+
+jobs:
+  docker:
+    name: Build and push Docker image
+    runs-on: ubuntu-24.04
+    env:
+      REGISTRY: "quay.io"
+      IMAGE_NAME: "duk4s/mimir-cardinality-analyzer"
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set version
+        id: version
+        run: |
+          VERSION=$(yq '.package.version' Cargo.toml)
+          echo "VERSION=${VERSION}" >> $GITHUB_OUTPUT
+          echo "🚀 Building version: ${VERSION}"
+
+      - name: Download release binary
+        run: |
+          wget https://github.com/${{ github.repository }}/releases/download/${{ steps.version.outputs.VERSION }}/mimir-cardinality-analyzer-linux-x86_64.tar.gz
+          tar -xzf mimir-cardinality-analyzer-linux-x86_64.tar.gz
+          chmod +x mimir-cardinality-analyzer
+          ls -la
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log into Quay
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ secrets.QUAY_USER }}
+          password: ${{ secrets.QUAY_PASSWORD }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=semver,pattern={{version}},value=${{ steps.version.outputs.VERSION }}
+            type=semver,pattern={{major}}.{{minor}},value=${{ steps.version.outputs.VERSION }}
+            type=semver,pattern={{major}},value=${{ steps.version.outputs.VERSION }}
+            type=raw,value=latest
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          platforms: linux/amd64
+          build-args: |
+            BINARY_PATH=./mimir-cardinality-analyzer
