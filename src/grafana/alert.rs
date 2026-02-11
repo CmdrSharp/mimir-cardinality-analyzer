@@ -10,10 +10,13 @@ pub struct Alert {
 
 #[derive(Deserialize, Debug, Clone)]
 pub struct AlertData {
-    pub model: Vec<AlertDataModel>,
+    #[serde(rename = "datasourceUid")]
+    pub datasource_uid: Option<String>,
+    pub model: AlertDataModel,
 }
 
 #[derive(Deserialize, Debug, Clone)]
 pub struct AlertDataModel {
+    #[serde(default)]
     pub expr: Option<String>,
 }

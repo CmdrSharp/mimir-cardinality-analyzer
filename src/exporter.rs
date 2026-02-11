@@ -1,4 +1,9 @@
-use crate::{config::Config, grafana::Grafana, metrics, mimir::Mimir};
+use crate::{
+    config::Config,
+    grafana::{Grafana, alert::Alert},
+    metrics,
+    mimir::Mimir,
+};
 
 pub struct Exporter {
     grafana: Grafana,
@@ -44,26 +49,38 @@ impl Exporter {
 
         // Analyze each tenant
         for tenant in tenants {
-            let used_metrics = self.mimir.analyze_tenant(&tenant).await?;
-            let top_metrics = self.mimir.get_tenant_top_metrics(&tenant).await?;
-
-            for metric in top_metrics {
-                let in_use = used_metrics.contains(&metric);
-                metrics::set_metric(&metric, &tenant, in_use);
-
-                let in_alerts = self
-                    .grafana
-                    .find_metric_in_alerts(&alerts, &metric)
-                    .unwrap_or(false);
-
-                let status = match (in_use, in_alerts) {
-                    (true, _) => "in use",
-                    (false, true) => "not in use (may be used by alerts)",
-                    (false, false) => "not in use",
-                };
-
-                tracing::info!("Metric '{}' in tenant '{}' is {}", metric, tenant, status);
+            if let Err(e) = self.process_tenant(&tenant, &alerts).await {
+                tracing::error!("Failed to analyze tenant '{}': {}", tenant, e);
+                continue;
             }
+        }
+
+        Ok(())
+    }
+
+    /// Analyze a single tenant
+    #[tracing::instrument(skip(self, alerts))]
+    async fn process_tenant(&self, tenant: &str, alerts: &Vec<Alert>) -> anyhow::Result<()> {
+        let datasources = self.grafana.get_datasources().await?;
+        let used_metrics = self.mimir.analyze_tenant(tenant).await?;
+        let top_metrics = self.mimir.get_tenant_top_metrics(tenant).await?;
+
+        for metric in top_metrics {
+            let in_use = used_metrics.contains(&metric);
+            metrics::set_metric(&metric, tenant, in_use);
+
+            let in_alerts = self
+                .grafana
+                .find_metric_in_alerts(tenant, alerts, &datasources, &metric)
+                .unwrap_or(false);
+
+            let status = match (in_use, in_alerts) {
+                (true, _) => "in use",
+                (false, true) => "not in use (may be used by alerts)",
+                (false, false) => "not in use",
+            };
+
+            tracing::info!("Metric '{}' in tenant '{}' is {}", metric, tenant, status);
         }
 
         Ok(())
