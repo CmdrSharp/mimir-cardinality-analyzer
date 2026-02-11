@@ -18,6 +18,10 @@ RUN addgroup -S appadmin -g 1000 && adduser -S appadmin -G appadmin -D -u 1000
 
 # Create writable directory
 RUN mkdir -p /data && chown appadmin:appadmin /data
+
+# Create config directory
+RUN mkdir -p /etc/config
+
 WORKDIR /data
 
 # Don't touch these
