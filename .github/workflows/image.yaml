@@ -22,10 +22,12 @@ jobs:
 
       - name: Download release binary
         run: |
-          wget --header="Authorization: token ${{ secrets.GITHUB_TOKEN }}" https://github.com/CmdrSharp/mimir-cardinality-analyzer/releases/download/${{ steps.version.outputs.VERSION }}/mimir-cardinality-analyzer-linux-x86_64.tar.gz
+          gh release download ${{ steps.version.outputs.VERSION }} --pattern 'mimir-cardinality-analyzer-linux-x86_64.tar.gz' --repo CmdrSharp/mimir-cardinality-analyzer
           tar -xzf mimir-cardinality-analyzer-linux-x86_64.tar.gz
           chmod +x mimir-cardinality-analyzer
           ls -la
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
