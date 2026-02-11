@@ -1,4 +1,13 @@
 ################################
+#### Download mimirtool
+FROM alpine:3.23 as downloader
+
+RUN apk add --no-cache curl
+
+RUN curl -L -o /usr/local/bin/mimirtool https://github.com/grafana/mimir/releases/latest/download/mimirtool-linux-amd64 && \
+    chmod +x /usr/local/bin/mimirtool
+
+################################
 #### Runtime
 FROM alpine:3.23 as runtime
 
@@ -26,9 +35,8 @@ RUN chmod +x /usr/local/bin/mimir-cardinality-analyzer
 RUN chown appadmin:appadmin /usr/local/bin/mimir-cardinality-analyzer
 RUN chown appadmin:appadmin /app
 
-# Install mimirtool
-RUN curl -L -o /usr/local/bin/mimirtool https://github.com/grafana/mimir/releases/latest/download/mimirtool-linux-amd64
-RUN chmod +x /usr/local/bin/mimirtool
+# Copy mimirtool from downloader stage
+COPY --from=downloader /usr/local/bin/mimirtool /usr/local/bin/mimirtool
 RUN chown appadmin:appadmin /usr/local/bin/mimirtool
 
 # Run as non-root
