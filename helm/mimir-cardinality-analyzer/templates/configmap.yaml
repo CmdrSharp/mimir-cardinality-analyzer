@@ -7,7 +7,7 @@ data:
     ---
     grafana:
       url: "{{ .Values.grafana.url }}"
-      token_from: "{{ .Values.grafana.tokenFrom }}"
+      tokenFrom: "{{ .Values.grafana.tokenFrom }}"
 
     mimir:
       querierUrl: "{{ .Values.mimir.querierUrl }}"
