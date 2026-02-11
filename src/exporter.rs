@@ -66,18 +66,19 @@ impl Exporter {
         let top_metrics = self.mimir.get_tenant_top_metrics(tenant).await?;
 
         for metric in top_metrics {
-            let in_use = used_metrics.contains(&metric);
-            metrics::set_metric(&metric, tenant, in_use);
+            let in_dashboards = used_metrics.contains(&metric);
 
             let in_alerts = self
                 .grafana
                 .find_metric_in_alerts(tenant, alerts, &datasources, &metric)
                 .unwrap_or(false);
 
-            let status = match (in_use, in_alerts) {
-                (true, _) => "in use",
-                (false, true) => "not in use (may be used by alerts)",
-                (false, false) => "not in use",
+            let in_use = in_dashboards || in_alerts;
+            metrics::set_metric(&metric, tenant, in_use);
+
+            let status = match in_use {
+                true => "in use",
+                false => "not in use",
             };
 
             tracing::info!("Metric '{}' in tenant '{}' is {}", metric, tenant, status);
