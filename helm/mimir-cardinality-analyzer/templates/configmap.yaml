@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-config
+data:
+  config.yaml: |
+    ---
+    grafana:
+      url: "{{ .Values.grafana.url }}"
+      token_from: "{{ .Values.grafana.tokenFrom }}"
+
+    mimir:
+      querierUrl: "{{ .Values.mimir.querierUrl }}"
+      storeGatewayUrl: "{{ .Values.mimir.storeGatewayUrl }}"
+
+    http:
+      host: "0.0.0.0"
+      port: 8080

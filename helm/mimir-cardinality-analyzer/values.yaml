@@ -1,0 +1,134 @@
+# Image settings
+image:
+  repository: quay.io/duk4s/mimir-cardinality-analyzer
+  pullPolicy: IfNotPresent
+  tag: ""
+
+# Reference to one or more secrets to be used when pulling images.
+# For more information, see [Pull an Image from a Private Registry](https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/).
+#
+# For example:
+#  imagePullSecrets:
+#    - name: "image-pull-secret"
+imagePullSecrets: []
+
+# Override the "mimir-cardinality-analyzer.name" value, which is used to annotate some of
+# the resources that are created by this Chart (using "app.kubernetes.io/name").
+# nameOverride: ""
+
+# Override the "mimir-cardinality-analyzer.fullname" value. This value is used as part of
+# most of the names of the resources created by this Helm chart.
+# fullnameOverride: ""
+
+# Grafana configuration
+grafana:
+  # The URL of the Grafana instance to connect to. This should be the full URL, including the protocol (e.g., "https://grafana.example.com").
+  url: ""
+  
+  # The name of the environment variable that contains the Grafana API token.
+  # This environment variable must be defined below.
+  tokenFrom: ""
+
+# Mimir configuration
+mimir:
+  # The URL of the Mimir querier to connect to. This should be the full URL, including the protocol (e.g., "http://mimir-querier:9090
+  querierUrl: ""
+
+  # The URL of the Mimir store-gateway to connect to. This should be the full URL, including the protocol (e.g., "http://mimir-store-gateway:9091").
+  storeGatewayUrl: ""
+
+# Optional additional annotations to add to the Pods.
+podAnnotations: {}
+
+# Optional additional labels to add to the controller Pods.
+podLabels: {}
+
+# Pod Security Context.
+# For more information, see [Configure a Security Context for a Pod or Container](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/).
+podSecurityContext:
+  runAsUser: 1000
+  runAsGroup: 1000
+  fsGroup: 1000
+
+# Container Security Context to be set on the container.
+# For more information, see [Configure a Security Context for a Pod or Container](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/).
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+  readOnlyRootFilesystem: true
+  runAsNonRoot: true
+  runAsUser: 1000
+  seccompProfile:
+    type: RuntimeDefault
+
+# Service settings
+service:
+  type: ClusterIP
+  port: 8080
+
+# Resource limits and requests
+# For more information, see [Resource Management for Pods and Containers](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/).
+resources: {}
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+
+# Additional volumes on the output Deployment definition.
+volumes: []
+# - name: foo
+#   secret:
+#     secretName: foo-secret
+#     optional: false
+
+# Additional volumeMounts on the output Deployment definition.
+volumeMounts: []
+# - name: foo
+#   mountPath: "/foo"
+#   readOnly: true
+
+# Additional environment variables to be set on the container.
+extraEnv: []
+# - name: EXAMPLE
+#   value: "foo"
+# - name: EXAMPLE_FROM_SECRET
+#   valueFrom:
+#     secretKeyRef:
+#       name: secret-name
+#       key: secret-key
+
+# The nodeSelector on Pods tells Kubernetes to schedule Pods on the nodes with
+# matching labels.
+# For more information, see [Assigning Pods to Nodes](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/).
+#
+# This default ensures that Pods are only scheduled to Linux nodes.
+# It prevents Pods being scheduled to Windows nodes in a mixed OS cluster.
+nodeSelector: {}
+
+# A list of Kubernetes Tolerations, if required. For more information, see [Toleration v1 core](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.27/#toleration-v1-core).
+#
+# For example:
+#   tolerations:
+#   - key: foo.bar.com/role
+#     operator: Equal
+#     value: master
+#     effect: NoSchedule
+tolerations: []
+
+# A Kubernetes Affinity, if required. For more information, see [Affinity v1 core](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.27/#affinity-v1-core).
+#
+# For example:
+#   affinity:
+#     nodeAffinity:
+#      requiredDuringSchedulingIgnoredDuringExecution:
+#        nodeSelectorTerms:
+#        - matchExpressions:
+#          - key: foo.bar.com/role
+#            operator: In
+#            values:
+#            - master
+affinity: {}
