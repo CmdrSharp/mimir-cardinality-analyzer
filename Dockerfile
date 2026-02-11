@@ -4,7 +4,7 @@ FROM alpine:3.23 as downloader
 
 RUN apk add --no-cache curl
 
-RUN curl -L -o /usr/local/bin/mimirtool https://github.com/grafana/mimir/releases/latest/download/mimirtool-linux-amd64 && \
+RUN curl -L -o /usr/local/bin/mimirtool https://github.com/grafana/mimir/releases/download/mimir-2.17.4/mimirtool-linux-amd64 && \
     chmod +x /usr/local/bin/mimirtool
 
 ################################
