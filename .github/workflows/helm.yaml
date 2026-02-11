@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-24.04
     env:
       REGISTRY: "quay.io"
-      HELM_REPO: "duk4s/helm"
+      HELM_REPO: "duk4s"
     steps:
       - uses: actions/checkout@v4
 
