@@ -37,7 +37,7 @@ jobs:
 
       - name: Push Helm chart to Quay OCI
         run: |
-          helm push mimir-cardinality-analyzer-${{ steps.version.outputs.CHART_VERSION }}.tgz \
+          helm push mimir-cardinality-analyzer-helm-${{ steps.version.outputs.CHART_VERSION }}.tgz \
             oci://${{ env.REGISTRY }}/${{ env.HELM_REPO }}
 
       - name: Logout from Quay
