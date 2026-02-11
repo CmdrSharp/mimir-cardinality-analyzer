@@ -1,12 +1,7 @@
-name: Release
+name: Build & Release
 
 on:
   workflow_dispatch:
-    inputs:
-      tag:
-        description: 'Tag to release (e.g., 0.1.0)'
-        required: true
-        type: string
 
 jobs:
   release:
@@ -31,6 +26,13 @@ jobs:
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
+
+      - name: Get version from Cargo.toml
+        id: version
+        run: |
+          VERSION=$(yq '.package.version' Cargo.toml)
+          echo "VERSION=${VERSION}" >> $GITHUB_OUTPUT
+          echo "📦 Building version: ${VERSION}"
 
       - name: Build binary
         uses: houseabsolute/actions-rust-cross@v1
@@ -65,4 +67,4 @@ jobs:
           files: |
             mimir-cardinality-analyzer-*
           generate_release_notes: true
-          tag_name: ${{ inputs.tag }}
+          tag_name: ${{ steps.version.outputs.VERSION }}
