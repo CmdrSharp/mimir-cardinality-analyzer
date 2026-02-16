@@ -20,6 +20,15 @@ imagePullSecrets: []
 # most of the names of the resources created by this Helm chart.
 # fullnameOverride: ""
 
+# Analyzer settings
+analyzer:
+  # Interval in seconds between analysis cycles (default: 86400 = 24h).
+  interval: 86400
+
+  # Disable analysis of alert rules. Set to true if your datasource names
+  # do not contain the tenant ID, or if you simply don't need alert correlation.
+  disableAlertCorrelation: false
+
 # Grafana configuration
 grafana:
   # The URL of the Grafana instance to connect to. This should be the full URL, including the protocol (e.g., "https://grafana.example.com").
