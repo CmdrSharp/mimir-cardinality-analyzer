@@ -10,7 +10,13 @@ On each analysis cycle (once per day by default), the tool:
 4. **Fetches top metrics by cardinality** for each tenant using Mimir's cardinality API (`/prometheus/api/v1/cardinality/label_values`), retrieving the top 100 metric names.
 5. **Cross-references** the top metrics against dashboard and alert usage. Each metric is classified as either active or inactive and exported as a Prometheus gauge.
 
-The output is a standard Prometheus gauge (`metric_active`) that you can visualize. The exported metric looks like:
+The output is a standard Prometheus gauge (`metric_active`) that you can visualize. Here's an example of what that looks like in Grafana:
+
+![Screenshot of Grafana dashboard showing metric usage per tenant](screenshot.png)
+
+The included dashboards are just modified versions of the [CERN](https://github.com/cerndb/grafana-mimir-cardinality-dashboards/tree/main/dashboards) dashboards.
+
+The exported metric looks like:
 
 ```
 metric_active{metric="some_metric_name", tenant="some-tenant"} 1
