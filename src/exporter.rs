@@ -4,8 +4,10 @@ use crate::{
     metrics,
     mimir::Mimir,
 };
+use std::time::Duration;
 
 pub struct Exporter {
+    config: Config,
     grafana: Grafana,
     mimir: Mimir,
 }
@@ -16,7 +18,11 @@ impl Exporter {
         let grafana = Grafana::new(config.grafana.clone())?;
         let mimir = Mimir::new(config.clone());
 
-        Ok(Self { grafana, mimir })
+        Ok(Self {
+            config,
+            grafana,
+            mimir,
+        })
     }
 
     /// Start the exporter loop
@@ -26,11 +32,11 @@ impl Exporter {
         loop {
             if let Err(e) = self.analyze().await {
                 tracing::error!("Analysis failed: {}", e);
-                tokio::time::sleep(std::time::Duration::from_secs(120)).await;
+                tokio::time::sleep(Duration::from_secs(120)).await;
                 continue;
             }
 
-            tokio::time::sleep(std::time::Duration::from_secs(86400)).await;
+            tokio::time::sleep(Duration::from_secs(self.config.cli.interval)).await;
         }
     }
 
@@ -68,12 +74,18 @@ impl Exporter {
         for metric in top_metrics {
             let in_dashboards = used_metrics.contains(&metric);
 
-            let in_alerts = self
-                .grafana
-                .find_metric_in_alerts(tenant, alerts, &datasources, &metric)
-                .unwrap_or(false);
+            let in_use = match self.config.cli.disable_alert_correlation {
+                true => in_dashboards,
+                false => {
+                    let in_alerts = self
+                        .grafana
+                        .find_metric_in_alerts(tenant, alerts, &datasources, &metric)
+                        .unwrap_or(false);
 
-            let in_use = in_dashboards || in_alerts;
+                    in_dashboards || in_alerts
+                }
+            };
+
             metrics::set_metric(&metric, tenant, in_use);
 
             let status = match in_use {

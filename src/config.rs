@@ -1,3 +1,4 @@
+use crate::Args;
 use anyhow::Result;
 use serde::Deserialize;
 use std::path::PathBuf;
@@ -17,6 +18,8 @@ pub struct Config {
     pub http: Http,
     #[serde(skip)]
     pub output_dir: PathBuf,
+    #[serde(skip)]
+    pub cli: Args,
 }
 
 #[derive(Debug, Clone)]
@@ -41,8 +44,16 @@ pub struct Http {
 }
 
 impl Config {
-    /// Load configuration from a file
-    pub fn from_file(path: &PathBuf) -> Result<Self> {
+    /// Create a new Config instance from a file, merging with CLI args
+    pub fn new(cli: Args) -> Result<Self> {
+        let mut config = Self::from_file(&cli.config)?;
+        config.cli = cli;
+
+        Ok(config)
+    }
+
+    /// Load config from a file
+    fn from_file(path: &PathBuf) -> Result<Self> {
         tracing::info!("Loading config from file");
 
         let config = std::fs::read_to_string(path)?;

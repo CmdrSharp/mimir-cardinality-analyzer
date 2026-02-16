@@ -12,7 +12,7 @@ pub mod http;
 pub mod metrics;
 pub mod mimir;
 
-#[derive(Parser, Debug)]
+#[derive(Parser, Debug, Clone, Default)]
 #[command(author, version, about, long_about = None)]
 pub struct Args {
     /// Config file
@@ -22,6 +22,14 @@ pub struct Args {
     /// Output directory for intermediate files (grafana.json, prometheus-metrics.json)
     #[arg(short, long, default_value = ".")]
     pub output_dir: PathBuf,
+
+    /// Interval in seconds between analyses (default: 86400 = 24h)
+    #[arg(short, long, default_value = "86400")]
+    pub interval: u64,
+
+    /// Disable analysis of alert rules
+    #[arg(long)]
+    pub disable_alert_correlation: bool,
 }
 
 /// Handle signals
