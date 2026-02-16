@@ -1,6 +1,6 @@
 ################################
 #### Download mimirtool
-FROM alpine:3.23 as downloader
+FROM alpine:3.23 AS downloader
 
 RUN apk add --no-cache curl
 
@@ -9,7 +9,7 @@ RUN curl -L -o /usr/local/bin/mimirtool https://github.com/grafana/mimir/release
 
 ################################
 #### Runtime
-FROM alpine:3.23 as runtime
+FROM alpine:3.23 AS runtime
 
 ARG BINARY_PATH=target/x86_64-unknown-linux-musl/release/mimir-cardinality-analyzer
 
@@ -23,14 +23,14 @@ RUN mkdir -p /app && chown appadmin:appadmin /app
 WORKDIR /data
 
 # Don't touch these
-ENV LC_COLLATE en_US.UTF-8
-ENV LC_CTYPE UTF-8
-ENV LC_MESSAGES en_US.UTF-8
-ENV LC_MONETARY en_US.UTF-8
-ENV LC_NUMERIC en_US.UTF-8
-ENV LC_TIME en_US.UTF-8
-ENV LC_ALL en_US.UTF-8
-ENV LANG en_US.UTF-8
+ENV LC_COLLATE=en_US.UTF-8
+ENV LC_CTYPE=en_US.UTF-8
+ENV LC_MESSAGES=en_US.UTF-8
+ENV LC_MONETARY=en_US.UTF-8
+ENV LC_NUMERIC=en_US.UTF-8
+ENV LC_TIME=en_US.UTF-8
+ENV LC_ALL=en_US.UTF-8
+ENV LANG=en_US.UTF-8
 
 # Copy the binary
 COPY ${BINARY_PATH} /usr/local/bin/mimir-cardinality-analyzer
