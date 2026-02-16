@@ -33,14 +33,10 @@ ENV LC_ALL=en_US.UTF-8
 ENV LANG=en_US.UTF-8
 
 # Copy the binary
-COPY ${BINARY_PATH} /usr/local/bin/mimir-cardinality-analyzer
-
-RUN chmod +x /usr/local/bin/mimir-cardinality-analyzer
-RUN chown appadmin:appadmin /usr/local/bin/mimir-cardinality-analyzer
+COPY --chown=appadmin:appadmin --chmod=755 ${BINARY_PATH} /usr/local/bin/mimir-cardinality-analyzer
 
 # Copy mimirtool from downloader stage
-COPY --from=downloader /usr/local/bin/mimirtool /usr/local/bin/mimirtool
-RUN chown appadmin:appadmin /usr/local/bin/mimirtool
+COPY --from=downloader --chown=appadmin:appadmin --chmod=755 /usr/local/bin/mimirtool /usr/local/bin/mimirtool
 
 # Run as non-root
 USER appadmin
