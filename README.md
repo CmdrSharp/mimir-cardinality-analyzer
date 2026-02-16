@@ -14,8 +14,6 @@ The output is a standard Prometheus gauge (`metric_active`) that you can visuali
 
 ![Screenshot of Grafana dashboard showing metric usage per tenant](screenshot.png)
 
-The included dashboards are just modified versions of the [CERN](https://github.com/cerndb/grafana-mimir-cardinality-dashboards/tree/main/dashboards) dashboards.
-
 The exported metric looks like:
 
 ```
@@ -76,6 +74,16 @@ helm install mimir-cardinality-analyzer oci://quay.io/duk4s/mimir-cardinality-an
 ```
 
 See [values.yaml](./helm/mimir-cardinality-analyzer/values.yaml) for a full set of configurable values.
+
+## Dashboards
+
+The included dashboards are modified versions of the [CERN](https://github.com/cerndb/grafana-mimir-cardinality-dashboards/tree/main/dashboards) dashboards. They require two datasources in Grafana:
+
+1. **Infinity** (`yesoreyeram-infinity-datasource`) — pointed at your Mimir querier. The dashboards use this to query Mimir's cardinality API directly (e.g. `/prometheus/api/v1/cardinality/label_values`). You'll need to install the [Infinity plugin](https://grafana.com/grafana/plugins/yesoreyeram-infinity-datasource/) and create a datasource with the base URL set to your Mimir querier.
+
+2. **Prometheus** — pointed at wherever you're scraping the analyzer's `/metrics` endpoint. This is used to query the `metric_active` gauge that the tool exports, which is what powers the "used vs. unused" view.
+
+When importing the dashboards, Grafana will prompt you to map both datasource variables to the ones you've configured.
 
 ## Metrics
 
