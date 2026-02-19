@@ -42,6 +42,11 @@ pub fn record_analysis_error(failure: TaskFailure) {
 /// Record an analysis cycle with the given status
 pub fn record_analysis_cycle(status: Status) {
     counter!("analysis_cycles_total", "status" => status.to_string()).increment(1);
+
+    match status {
+        Status::Success => record_successful_analysis(),
+        Status::Failure => record_analysis_error(TaskFailure::Cycle),
+    }
 }
 
 /// Record the number of tenants discovered

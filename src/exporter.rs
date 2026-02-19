@@ -1,7 +1,7 @@
 use crate::{
     config::Config,
     grafana::{Grafana, alert::Alert},
-    metrics::{self, analysis::TaskFailure},
+    metrics::{self, Status, analysis::TaskFailure},
     mimir::Mimir,
 };
 use std::time::Duration;
@@ -32,11 +32,12 @@ impl Exporter {
         loop {
             if let Err(e) = self.analyze().await {
                 tracing::error!("Analysis failed: {}", e);
-                metrics::analysis::record_analysis_error(TaskFailure::Cycle);
+                metrics::analysis::record_analysis_cycle(Status::Failure);
                 tokio::time::sleep(Duration::from_secs(120)).await;
                 continue;
             }
 
+            metrics::analysis::record_analysis_cycle(Status::Success);
             tokio::time::sleep(Duration::from_secs(self.config.cli.interval)).await;
         }
     }
