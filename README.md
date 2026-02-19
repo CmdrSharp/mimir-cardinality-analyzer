@@ -87,10 +87,38 @@ When importing the dashboards, Grafana will prompt you to map both datasource va
 
 ## Metrics
 
+### Analysis
+
 | Metric | Type | Labels | Description |
 |---|---|---|---|
 | `metric_active` | Gauge | `metric`, `tenant` | `1` if the metric is referenced in a dashboard or alert, `0` otherwise |
-| `task_duration_seconds` | Histogram | `task`, `tenant_id` | Duration of internal analysis tasks (tenant fetching, dashboard analysis, etc.) |
+| `analysis_errors_total` | Counter | `task` (`cycle`, `tenant`), `tenant` (only when `task=tenant`) | Count of analysis failures, per cycle or per tenant |
+| `analysis_cycles_total` | Counter | `status` (`success`, `failure`) | Count of completed analysis loop iterations |
+| `tenants_discovered_total` | Gauge | — | Number of tenants found during the latest discovery |
+| `last_successful_analysis_timestamp` | Gauge | — | Unix timestamp of the last successful analysis cycle |
+
+### External dependencies
+
+| Metric | Type | Labels | Description |
+|---|---|---|---|
+| `external_request_duration_seconds` | Histogram | `target` (`store-gateway`, `querier`, `grafana`) | Latency of outbound HTTP requests |
+| `external_request_failures_total` | Counter | `target` | Count of failed outbound HTTP requests |
+| `mimirtool_executions_total` | Counter | `command` (`analyze_grafana`, `analyze_prometheus`), `status` (`success`, `failure`) | Count of mimirtool subprocess invocations |
+| `mimirtool_duration_seconds` | Histogram | `command` | Duration of mimirtool subprocess executions |
+
+### HTTP server
+
+| Metric | Type | Labels | Description |
+|---|---|---|---|
+| `http_requests_total` | Counter | `endpoint` | Count of HTTP requests per endpoint |
+| `http_request_duration_seconds` | Histogram | `endpoint` | Latency of HTTP request handling per endpoint |
+
+### Process
+
+| Metric | Type | Labels | Description |
+|---|---|---|---|
+| `process_start_time_seconds` | Gauge | — | Process start time as Unix epoch seconds |
+| `build_info` | Gauge | `version` | Always `1`; the `version` label carries the application version |
 
 ## Limitations
 
