@@ -121,7 +121,7 @@ impl Mimir {
     pub async fn analyze_tenant(&self, tenant_id: &str) -> anyhow::Result<Vec<String>> {
         tracing::info!("Analyzing metric cardinality in Mimir");
         let _timer = metrics::external::mimirtool_timer(ExternalCommand::AnalyzePrometheus)
-            .with_label("tenant_id", tenant_id);
+            .with_label("tenant", tenant_id);
 
         let grafana_input = self.config.output_dir.join("grafana.json");
         let grafana_input = grafana_input.to_string_lossy();
@@ -198,7 +198,7 @@ impl Mimir {
         );
 
         let _timer = metrics::external::external_request_timer(Target::Querier)
-            .with_label("tenant_id", tenant_id);
+            .with_label("tenant", tenant_id);
 
         let resp = self
             .client
