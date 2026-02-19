@@ -1,6 +1,7 @@
 use crate::{
     config::Grafana as GrafanaConfig,
     grafana::{alert::Alert, datasource::Datasource},
+    metrics::{self, external::Target},
 };
 
 pub mod alert;
@@ -25,6 +26,7 @@ impl Grafana {
     #[tracing::instrument(skip(self))]
     pub async fn get_datasources(&self) -> anyhow::Result<Vec<Datasource>> {
         tracing::info!("Fetching datasources from Grafana");
+        let timer = metrics::external::external_request_timer(Target::Grafana);
 
         let response = self
             .client
@@ -35,6 +37,8 @@ impl Grafana {
             .json::<Vec<Datasource>>()
             .await?;
 
+        drop(timer);
+
         Ok(response)
     }
 
@@ -42,6 +46,7 @@ impl Grafana {
     #[tracing::instrument(skip(self))]
     pub async fn get_alert_rules(&self) -> anyhow::Result<Vec<Alert>> {
         tracing::info!("Fetching alert rules from Grafana");
+        let timer = metrics::external::external_request_timer(Target::Grafana);
 
         let response = self
             .client
@@ -52,6 +57,8 @@ impl Grafana {
             .bearer_auth(self.config.token.clone())
             .send()
             .await?;
+
+        drop(timer);
 
         let body = response.text().await?;
         let alerts: Vec<Alert> = serde_json::from_str(&body)?;

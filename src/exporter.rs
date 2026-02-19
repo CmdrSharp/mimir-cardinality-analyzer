@@ -1,7 +1,7 @@
 use crate::{
     config::Config,
     grafana::{Grafana, alert::Alert},
-    metrics,
+    metrics::{self, analysis::TaskFailure},
     mimir::Mimir,
 };
 use std::time::Duration;
@@ -32,6 +32,7 @@ impl Exporter {
         loop {
             if let Err(e) = self.analyze().await {
                 tracing::error!("Analysis failed: {}", e);
+                metrics::analysis::record_analysis_error(TaskFailure::Cycle);
                 tokio::time::sleep(Duration::from_secs(120)).await;
                 continue;
             }
@@ -57,6 +58,8 @@ impl Exporter {
         for tenant in tenants {
             if let Err(e) = self.process_tenant(&tenant, &alerts).await {
                 tracing::error!("Failed to analyze tenant '{}': {}", tenant, e);
+                metrics::analysis::record_analysis_error(TaskFailure::Tenant(tenant.clone()));
+
                 continue;
             }
         }
@@ -86,7 +89,7 @@ impl Exporter {
                 }
             };
 
-            metrics::set_metric(&metric, tenant, in_use);
+            metrics::analysis::set_metric(&metric, tenant, in_use);
 
             let status = match in_use {
                 true => "in use",

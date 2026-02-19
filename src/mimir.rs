@@ -1,4 +1,10 @@
-use crate::{config::Config, metrics::Timer};
+use crate::{
+    config::Config,
+    metrics::{
+        self,
+        external::{Command as ExternalCommand, Target},
+    },
+};
 use reqwest::Client;
 use scraper::{Html, Selector};
 use tokio::process::Command;
@@ -21,15 +27,18 @@ impl Mimir {
     /// Get a list of tenants from the store-gateway
     pub async fn get_tenants(&self) -> anyhow::Result<Vec<String>> {
         tracing::info!("Fetching tenants from store-gateway");
-        let _timer = Timer::new().with_label("task", "get_tenants");
+        let _timer = metrics::external::external_request_timer(Target::StoreGateway);
 
         let url = format!(
             "{}/store-gateway/tenants",
             self.config.mimir.store_gateway_url
         );
+
         let resp = self.client.get(&url).send().await?;
 
         if !resp.status().is_success() {
+            metrics::external::record_external_request_failure(Target::StoreGateway);
+
             return Err(anyhow::anyhow!(
                 "Failed to fetch tenants: HTTP {}",
                 resp.status()
@@ -47,6 +56,9 @@ impl Mimir {
             .filter_map(|element| Some(element.text().next()?.to_string()))
             .collect();
 
+        // Record the number of tenants discovered
+        metrics::analysis::record_tenants_discovered(tenants.len() as u64);
+
         Ok(tenants)
     }
 
@@ -54,7 +66,7 @@ impl Mimir {
     #[tracing::instrument(skip(self))]
     pub async fn analyze_grafana(&self) -> anyhow::Result<()> {
         tracing::info!("Analyzing metric usage in dashboards");
-        let _timer = Timer::new().with_label("task", "analyze_grafana");
+        let _timer = metrics::external::mimirtool_timer(ExternalCommand::AnalyzeGrafana);
 
         let grafana_output = self.config.output_dir.join("grafana.json");
         let grafana_output = grafana_output.to_string_lossy();
@@ -73,16 +85,32 @@ impl Mimir {
         match Command::new("mimirtool").args(args).output().await {
             Ok(output) => {
                 if !output.status.success() {
+                    metrics::external::record_mimirtool_execution(
+                        ExternalCommand::AnalyzeGrafana,
+                        metrics::Status::Failure,
+                    );
+
                     let stderr = String::from_utf8_lossy(&output.stderr);
+
                     return Err(anyhow::anyhow!(
                         "Mimirtool command failed: {}",
                         stderr.trim()
                     ));
                 }
 
+                metrics::external::record_mimirtool_execution(
+                    ExternalCommand::AnalyzeGrafana,
+                    metrics::Status::Success,
+                );
+
                 Ok(())
             }
             Err(e) => {
+                metrics::external::record_mimirtool_execution(
+                    ExternalCommand::AnalyzeGrafana,
+                    metrics::Status::Failure,
+                );
+
                 return Err(anyhow::anyhow!("Failed to execute mimirtool: {}", e));
             }
         }
@@ -92,8 +120,7 @@ impl Mimir {
     #[tracing::instrument(skip(self))]
     pub async fn analyze_tenant(&self, tenant_id: &str) -> anyhow::Result<Vec<String>> {
         tracing::info!("Analyzing metric cardinality in Mimir");
-        let _timer = Timer::new()
-            .with_label("task", "analyze_tenant")
+        let _timer = metrics::external::mimirtool_timer(ExternalCommand::AnalyzePrometheus)
             .with_label("tenant_id", tenant_id);
 
         let grafana_input = self.config.output_dir.join("grafana.json");
@@ -120,6 +147,11 @@ impl Mimir {
         match Command::new("mimirtool").args(args).output().await {
             Ok(output) => {
                 if !output.status.success() {
+                    metrics::external::record_mimirtool_execution(
+                        ExternalCommand::AnalyzePrometheus,
+                        metrics::Status::Failure,
+                    );
+
                     let stderr = String::from_utf8_lossy(&output.stderr);
 
                     return Err(anyhow::anyhow!(
@@ -129,12 +161,18 @@ impl Mimir {
                 }
             }
             Err(e) => {
+                metrics::external::record_mimirtool_execution(
+                    ExternalCommand::AnalyzePrometheus,
+                    metrics::Status::Failure,
+                );
+
                 return Err(anyhow::anyhow!("Failed to execute mimirtool: {}", e));
             }
         };
 
         let content =
             std::fs::read_to_string(self.config.output_dir.join("prometheus-metrics.json"))?;
+
         let data: serde_json::Value = serde_json::from_str(&content)?;
 
         let metrics = data["in_use_metric_counts"]
@@ -143,6 +181,11 @@ impl Mimir {
             .iter()
             .filter_map(|entry| entry["metric"].as_str().map(String::from))
             .collect();
+
+        metrics::external::record_mimirtool_execution(
+            ExternalCommand::AnalyzePrometheus,
+            metrics::Status::Success,
+        );
 
         Ok(metrics)
     }
@@ -154,6 +197,9 @@ impl Mimir {
             self.config.mimir.querier_url
         );
 
+        let _timer = metrics::external::external_request_timer(Target::Querier)
+            .with_label("tenant_id", tenant_id);
+
         let resp = self
             .client
             .get(&url)
@@ -162,6 +208,8 @@ impl Mimir {
             .await?;
 
         if !resp.status().is_success() {
+            metrics::external::record_external_request_failure(Target::Querier);
+
             return Err(anyhow::anyhow!(
                 "Failed to fetch tenant metrics: HTTP {}",
                 resp.status()

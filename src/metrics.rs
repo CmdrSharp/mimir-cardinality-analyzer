@@ -1,7 +1,12 @@
-use metrics::{describe_gauge, describe_histogram, gauge, histogram};
+use metrics::histogram;
 use metrics_exporter_prometheus::{PrometheusBuilder, PrometheusHandle};
 use once_cell::sync::OnceCell;
 use std::time::Instant;
+
+pub mod analysis;
+pub mod external;
+pub mod http;
+pub mod process;
 
 pub static METRICS_HANDLE: OnceCell<Option<PrometheusHandle>> = OnceCell::new();
 
@@ -19,18 +24,11 @@ pub fn register_metrics() {
             panic!("Failed to set the metrics handle");
         });
 
-    describe_gauge!(
-        "metric_active",
-        "Tracks whether a given metric is active (1) or inactive (0)"
-    );
-
-    describe_histogram!("task_duration_seconds", "Duration of a task in seconds");
-}
-
-/// Create usage metric for a given metric name
-pub fn set_metric(metric_name: &str, tenant_id: &str, active: bool) {
-    gauge!("metric_active", "metric" => metric_name.to_string(), "tenant" => tenant_id.to_string())
-        .set(if active { 1 } else { 0 });
+    // Register metrics
+    analysis::register_metrics();
+    external::register_metrics();
+    http::register_metrics();
+    process::register_metrics();
 }
 
 pub struct Timer {
@@ -74,6 +72,21 @@ impl Drop for Timer {
                 .collect();
 
             histogram!("task_duration_seconds", &labels).record(duration);
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub enum Status {
+    Success,
+    Failure,
+}
+
+impl std::fmt::Display for Status {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Status::Success => write!(f, "success"),
+            Status::Failure => write!(f, "failure"),
         }
     }
 }
