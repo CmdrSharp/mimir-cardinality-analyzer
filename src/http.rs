@@ -30,17 +30,27 @@ fn create_router() -> Router {
 
 /// This is the handler for the /alive path
 async fn alive() -> StatusCode {
+    crate::metrics::http::record_http_request("/alive");
+    let _timer = crate::metrics::http::http_request_timer("/alive");
+
     StatusCode::OK
 }
 
 /// This is the handler for the /metrics path
 #[tracing::instrument]
 async fn metrics() -> impl IntoResponse {
+    crate::metrics::http::record_http_request("/metrics");
+    let _timer = crate::metrics::http::http_request_timer("/metrics");
+
     match METRICS_HANDLE.get().unwrap() {
         Some(handle) => (StatusCode::OK, handle.render()),
-        None => (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            "Failed to get the metrics handle".to_string(),
-        ),
+        None => {
+            crate::metrics::http::record_http_request("/metrics");
+
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "Failed to get the metrics handle".to_string(),
+            )
+        }
     }
 }
