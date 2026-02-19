@@ -39,6 +39,7 @@ async fn alive() -> StatusCode {
 /// This is the handler for the /metrics path
 #[tracing::instrument]
 async fn metrics() -> impl IntoResponse {
+    crate::metrics::http::record_http_request("/metrics");
     let _timer = crate::metrics::http::http_request_timer("/metrics");
 
     match METRICS_HANDLE.get().unwrap() {
